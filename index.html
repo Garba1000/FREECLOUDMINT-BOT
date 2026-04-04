@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud Miner Pro</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b0f14;
+  --card:#121821;
+  --accent:#00e676;
+  --text:#e6edf3;
+  --muted:#8b98a5;
+}
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* HEADER */
+.header{
+  padding:16px;
+  text-align:center;
+  font-weight:bold;
+  font-size:20px;
+  color:var(--accent);
+}
+
+/* BALANCE PANEL */
+.balance-box{
+  background:linear-gradient(135deg,#00c853,#009624);
+  margin:12px;
+  padding:20px;
+  border-radius:16px;
+  text-align:center;
+  color:#000;
+}
+
+.balance-box h2{
+  margin:0;
+  font-size:32px;
+}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:12px;
+}
+
+.card{
+  background:var(--card);
+  padding:14px;
+  border-radius:14px;
+}
+
+/* BUTTON */
+.btn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:var(--accent);
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.btn.secondary{
+  background:#1e293b;
+  color:white;
+}
+
+/* MINING BUTTON BIG */
+.mine-btn{
+  width:90%;
+  margin:20px auto;
+  display:block;
+  padding:16px;
+  font-size:18px;
+  border-radius:50px;
+  background:var(--accent);
+  border:none;
+}
+
+/* INPUT */
+input, select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  margin-top:8px;
+  background:#0f1620;
+  color:white;
+}
+
+/* FOOTER NAV */
+.nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#0f1620;
+  display:flex;
+}
+
+.nav button{
+  flex:1;
+  padding:12px;
+  border:none;
+  background:none;
+  color:var(--muted);
+}
+
+.nav button.active{
+  color:var(--accent);
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">⚡ Cloud Miner Pro</div>
+
+<div class="balance-box">
+  <div>Total Balance</div>
+  <h2>$<span id="totalBalance">0.00</span></h2>
+  <small>Withdraw ≥ $10</small>
+</div>
+
+<!-- MAIN -->
+<div id="homePage">
+
+  <button class="mine-btn" id="miningBtn">⛏ Start Mining</button>
+
+  <div class="grid">
+
+    <!-- TODAY -->
+    <div class="card">
+      <div>Today Earnings</div>
+      <h3>$<span id="todayEarnings">0.0000</span></h3>
+    </div>
+
+    <!-- ENERGY -->
+    <div class="card">
+      <div>Gold Energy</div>
+      <h3><span id="goldEnergy">20</span></h3>
+    </div>
+
+    <!-- CLAIM -->
+    <div class="card">
+      <button class="btn secondary" id="claimGoldBtn">Claim Gold</button>
+      <div id="claimTaskSection"></div>
+    </div>
+
+    <!-- REFERRAL -->
+    <div class="card">
+      <button class="btn" id="referralBtn">Referral Link</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- WITHDRAW PAGE -->
+<div id="walletPage" style="display:none;padding:12px;">
+  <div class="card">
+    <h3>Withdraw</h3>
+
+    <select id="method">
+      <option value="bank">Bank</option>
+      <option value="ltc">Litecoin</option>
+      <option value="opay">OPay</option>
+      <option value="payeer">Payeer</option>
+    </select>
+
+    <input id="details" placeholder="Enter details">
+
+    <button class="btn" id="withdrawBtn">Withdraw</button>
+  </div>
+</div>
+
+<!-- INFO PAGE -->
+<div id="infoPage" style="display:none;padding:12px;">
+  <div class="card">
+    <h3>How it works</h3>
+    <p style="color:var(--muted)">
+      Start mining, complete tasks, earn daily and withdraw once you reach minimum balance.
+    </p>
+    <button class="btn secondary" id="infoBtn">More Info</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="active" onclick="showPage('homePage',this)">Home</button>
+  <button onclick="showPage('walletPage',this)">Wallet</button>
+  <button onclick="showPage('infoPage',this)">Info</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp ?? {};
+tg.expand();
+
+/* NAV SWITCH */
+function showPage(page,btn){
+  document.querySelectorAll('#homePage,#walletPage,#infoPage')
+    .forEach(p=>p.style.display='none');
+  document.getElementById(page).style.display='block';
+
+  document.querySelectorAll('.nav button')
+    .forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ADSGRAM (UNCHANGED IMPORTANT) */
+const RewardAd = window.Adsgram.init({ blockId: "26637" });
+
+RewardAd.show().then(res=>{
+  if(res.done){
+    console.log("Ad watched");
+  }
+}).catch(console.log);
+
+/* CLAIM GOLD TASK (UNCHANGED LOGIC) */
+const claimBtn = document.getElementById('claimGoldBtn');
+const taskSection = document.getElementById('claimTaskSection');
+
+const claimTasks = ["task-26639","task-26640","task-task-26641"];
+let currentClaimIndex = 0;
+
+claimBtn.onclick = () => {
+  const blockId = claimTasks[currentClaimIndex];
+
+  taskSection.innerHTML =
+    `<adsgram-task data-block-id="${blockId}"></adsgram-task>`;
+
+  const taskEl = taskSection.querySelector('adsgram-task');
+
+  taskEl.addEventListener('reward', () => {
+    alert("✅ Gold Added!");
+    currentClaimIndex =
+      (currentClaimIndex + 1) % claimTasks.length;
+    taskSection.innerHTML = '';
+  }, { once:true });
+};
+</script>
+
+</body>
+</html>
