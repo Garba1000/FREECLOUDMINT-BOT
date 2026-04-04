@@ -249,6 +249,36 @@ claimBtn.onclick = () => {
     taskSection.innerHTML = '';
   }, { once:true });
 };
+
+/* MINING FUNCTIONALITY */
+const miningBtn = document.getElementById('miningBtn');
+let miningInterval;
+let totalBalance = 0;
+let todayEarnings = 0;
+const totalBalanceEl = document.getElementById('totalBalance');
+const todayEarningsEl = document.getElementById('todayEarnings');
+
+miningBtn.onclick = () => {
+  if(miningInterval){
+    // Stop mining
+    clearInterval(miningInterval);
+    miningInterval = null;
+    miningBtn.textContent = '⛏ Start Mining';
+    return;
+  }
+
+  miningBtn.textContent = '⛏ Mining...';
+
+  // Mine every 3 seconds
+  miningInterval = setInterval(() => {
+    const earned = (Math.random() * 0.01).toFixed(4); // Random mining per tick
+    totalBalance = (parseFloat(totalBalance) + parseFloat(earned)).toFixed(4);
+    todayEarnings = (parseFloat(todayEarnings) + parseFloat(earned)).toFixed(4);
+    totalBalanceEl.textContent = totalBalance;
+    todayEarningsEl.textContent = todayEarnings;
+    console.log(`Mined $${earned}`);
+  }, 3000);
+};
 </script>
 
 </body>
