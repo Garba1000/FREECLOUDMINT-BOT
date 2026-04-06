@@ -198,7 +198,7 @@ function showPage(page,btn){
   btn.classList.add('active');
 }
 
-/* ADSGRAM INIT (UNCHANGED) */
+/* ADSGRAM INIT */
 const RewardAd = window.Adsgram.init({ blockId: "26852" });
 
 /* USER DATA (AUTO SAVE) */
@@ -223,16 +223,17 @@ const todayEarningsEl = document.getElementById('todayEarnings');
 const energyEl = document.getElementById('goldEnergy');
 
 function updateUI(){
-  totalBalanceEl.textContent = Number(totalBalance).toFixed(5);
-  todayEarningsEl.textContent = Number(todayEarnings).toFixed(5);
+  totalBalanceEl.textContent = Number(totalBalance).toFixed(6);
+  todayEarningsEl.textContent = Number(todayEarnings).toFixed(6);
   energyEl.textContent = energy;
 }
 
-/* MINING FIXED */
+/* MINING (VISIBLE FIX) */
 let miningInterval;
 const miningBtn = document.getElementById('miningBtn');
 
 miningBtn.onclick = () => {
+
   if(miningInterval){
     clearInterval(miningInterval);
     miningInterval = null;
@@ -252,13 +253,16 @@ miningBtn.onclick = () => {
     }
 
     energy--;
-    totalBalance += miningRate;
-    todayEarnings += miningRate;
+
+    let earn = miningRate * 10;
+
+    totalBalance += earn;
+    todayEarnings += earn;
 
     saveData();
     updateUI();
 
-  }, 5000);
+  }, 2000);
 };
 
 /* WATCH AD REWARD */
