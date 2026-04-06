@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloud Miner Pro</title>
+<title>Cloud Miner Pro — High Revenue</title>
 
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+
+<!-- Telegram + AdsGram -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
@@ -190,7 +194,7 @@ input, select{
   <div class="card">
     <h3>How it works</h3>
     <p style="color:var(--muted)">
-      Start mining, complete tasks, earn daily and withdraw once you reach minimum balance.
+      Start mining, complete tasks, watch ads to earn bonuses, and withdraw once you reach minimum balance.
     </p>
     <button class="btn secondary" id="infoBtn">More Info</button>
   </div>
@@ -218,20 +222,144 @@ function showPage(page,btn){
   btn.classList.add('active');
 }
 
-/* ADSGRAM (UNCHANGED IMPORTANT) */
+/* ADSGRAM INIT (SAFE) */
 const RewardAd = window.Adsgram.init({ blockId: "26852" });
 
-RewardAd.show().then(res=>{
-  if(res.done){
-    console.log("Ad watched");
-  }
-}).catch(console.log);
+/* USER DATA */
+let totalBalance = 0;
+let todayEarnings = 0;
+let miningRate = 0.00001;
+let energy = 20;
+let vipLevel = 0;
+let lastAdTime = 0;
+const adCooldown = 15000; // 15 sec
 
-/* CLAIM GOLD TASK (UNCHANGED LOGIC) */
+/* UI ELEMENTS */
+const totalBalanceEl = document.getElementById('totalBalance');
+const todayEarningsEl = document.getElementById('todayEarnings');
+const energyEl = document.getElementById('goldEnergy');
+
+function updateUI(){
+  totalBalanceEl.textContent = totalBalance;
+  todayEarningsEl.textContent = todayEarnings;
+  energyEl.textContent = energy;
+}
+
+/* MINING */
+let miningInterval;
+const miningBtn = document.getElementById('miningBtn');
+
+miningBtn.onclick = () => {
+  if(miningInterval){
+    clearInterval(miningInterval);
+    miningInterval = null;
+    miningBtn.textContent = '⛏ Start Mining';
+    return;
+  }
+
+  miningBtn.textContent = '⛏ Mining...';
+
+  miningInterval = setInterval(() => {
+
+    if(energy <= 0){
+      clearInterval(miningInterval);
+      miningBtn.textContent = '⚡ No Energy';
+      return;
+    }
+
+    energy--;
+    totalBalance = (parseFloat(totalBalance) + miningRate).toFixed(5);
+    todayEarnings = (parseFloat(todayEarnings) + miningRate).toFixed(5);
+    updateUI();
+
+  }, 5000);
+};
+
+/* WATCH AD REWARD */
+function watchAdReward(){
+
+  let now = Date.now();
+
+  if(now - lastAdTime < adCooldown){
+    alert("⏳ Wait before next ad");
+    return;
+  }
+
+  RewardAd.show().then(res=>{
+    if(res.done){
+      lastAdTime = Date.now();
+      let reward = 0.002 + (vipLevel * 0.001);
+
+      totalBalance = (parseFloat(totalBalance) + reward).toFixed(5);
+      todayEarnings = (parseFloat(todayEarnings) + reward).toFixed(5);
+
+      energy += 5;
+      updateUI();
+      alert("✅ Earned $" + reward);
+    }
+  });
+}
+
+/* BOOST MINING */
+function boostMining(){
+  RewardAd.show().then(res=>{
+    if(res.done){
+      miningRate = 0.00005 + (vipLevel * 0.00002);
+      alert("⚡ Boost Activated!");
+    }
+  });
+}
+
+/* VIP UPGRADE */
+function upgradeVIP(){
+  RewardAd.show().then(res=>{
+    if(res.done){
+      vipLevel++;
+      alert("💎 VIP Level " + vipLevel);
+    }
+  });
+}
+
+/* DAILY BONUS */
+function dailyBonus(){
+  let today = new Date().toDateString();
+
+  if(localStorage.getItem("daily") === today){
+    alert("Already claimed today");
+    return;
+  }
+
+  RewardAd.show().then(res=>{
+    if(res.done){
+      totalBalance = (parseFloat(totalBalance) + 0.005).toFixed(5);
+      localStorage.setItem("daily", today);
+      updateUI();
+      alert("🎁 Daily Bonus $0.005");
+    }
+  });
+}
+
+/* ADD HIGH REVENUE BUTTONS */
+function addButtons(){
+  const container = document.getElementById("homePage");
+  container.innerHTML += `
+    <div style="padding:12px;">
+      <button class="btn" onclick="watchAdReward()">🎥 Watch Ad & Earn</button>
+      <button class="btn secondary" onclick="boostMining()">⚡ Boost Mining</button>
+      <button class="btn" onclick="upgradeVIP()">💎 Upgrade VIP</button>
+      <button class="btn secondary" onclick="dailyBonus()">🎁 Daily Bonus</button>
+    </div>
+  `;
+}
+
+addButtons();
+updateUI();
+
+/* CLAIM GOLD TASK (UNCHANGED SAFE) */
 const claimBtn = document.getElementById('claimGoldBtn');
 const taskSection = document.getElementById('claimTaskSection');
 
-const claimTasks = ["task-26854","task-26855","task-task-26856"];
+const claimTasks = ["task-26854","task-26855","task-26856"];
 let currentClaimIndex = 0;
 
 claimBtn.onclick = () => {
@@ -243,41 +371,20 @@ claimBtn.onclick = () => {
   const taskEl = taskSection.querySelector('adsgram-task');
 
   taskEl.addEventListener('reward', () => {
-    alert("✅ Gold Added!");
+    let reward = 0.002;
+
+    totalBalance = (parseFloat(totalBalance) + reward).toFixed(5);
+    todayEarnings = (parseFloat(todayEarnings) + reward).toFixed(5);
+    updateUI();
+
+    alert("✅ Task Reward");
+
     currentClaimIndex =
       (currentClaimIndex + 1) % claimTasks.length;
+
     taskSection.innerHTML = '';
+
   }, { once:true });
-};
-
-/* MINING FUNCTIONALITY */
-const miningBtn = document.getElementById('miningBtn');
-let miningInterval;
-let totalBalance = 0;
-let todayEarnings = 0;
-const totalBalanceEl = document.getElementById('totalBalance');
-const todayEarningsEl = document.getElementById('todayEarnings');
-
-miningBtn.onclick = () => {
-  if(miningInterval){
-    // Stop mining
-    clearInterval(miningInterval);
-    miningInterval = null;
-    miningBtn.textContent = '⛏ Start Mining';
-    return;
-  }
-
-  miningBtn.textContent = '⛏ Mining...';
-
-  // Mine every 3 seconds
-  miningInterval = setInterval(() => {
-    const earned = (Math.random() * 0.01).toFixed(4); // Random mining per tick
-    totalBalance = (parseFloat(totalBalance) + parseFloat(earned)).toFixed(4);
-    todayEarnings = (parseFloat(todayEarnings) + parseFloat(earned)).toFixed(4);
-    totalBalanceEl.textContent = totalBalance;
-    todayEarningsEl.textContent = todayEarnings;
-    console.log(`Mined $${earned}`);
-  }, 3000);
 };
 </script>
 
