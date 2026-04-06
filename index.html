@@ -20,15 +20,12 @@
   --text:#e6edf3;
   --muted:#8b98a5;
 }
-
 body{
   margin:0;
   font-family:Arial;
   background:var(--bg);
   color:var(--text);
 }
-
-/* HEADER */
 .header{
   padding:16px;
   text-align:center;
@@ -36,8 +33,6 @@ body{
   font-size:20px;
   color:var(--accent);
 }
-
-/* BALANCE PANEL */
 .balance-box{
   background:linear-gradient(135deg,#00c853,#009624);
   margin:12px;
@@ -46,27 +41,21 @@ body{
   text-align:center;
   color:#000;
 }
-
 .balance-box h2{
   margin:0;
   font-size:32px;
 }
-
-/* GRID */
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
   padding:12px;
 }
-
 .card{
   background:var(--card);
   padding:14px;
   border-radius:14px;
 }
-
-/* BUTTON */
 .btn{
   width:100%;
   padding:12px;
@@ -76,13 +65,10 @@ body{
   font-weight:bold;
   cursor:pointer;
 }
-
 .btn.secondary{
   background:#1e293b;
   color:white;
 }
-
-/* MINING BUTTON BIG */
 .mine-btn{
   width:90%;
   margin:20px auto;
@@ -93,8 +79,6 @@ body{
   background:var(--accent);
   border:none;
 }
-
-/* INPUT */
 input, select{
   width:100%;
   padding:10px;
@@ -104,8 +88,6 @@ input, select{
   background:#0f1620;
   color:white;
 }
-
-/* FOOTER NAV */
 .nav{
   position:fixed;
   bottom:0;
@@ -113,7 +95,6 @@ input, select{
   background:#0f1620;
   display:flex;
 }
-
 .nav button{
   flex:1;
   padding:12px;
@@ -121,7 +102,6 @@ input, select{
   background:none;
   color:var(--muted);
 }
-
 .nav button.active{
   color:var(--accent);
 }
@@ -145,25 +125,21 @@ input, select{
 
   <div class="grid">
 
-    <!-- TODAY -->
     <div class="card">
       <div>Today Earnings</div>
       <h3>$<span id="todayEarnings">0.0000</span></h3>
     </div>
 
-    <!-- ENERGY -->
     <div class="card">
       <div>Gold Energy</div>
       <h3><span id="goldEnergy">20</span></h3>
     </div>
 
-    <!-- CLAIM -->
     <div class="card">
       <button class="btn secondary" id="claimGoldBtn">Claim Gold</button>
       <div id="claimTaskSection"></div>
     </div>
 
-    <!-- REFERRAL -->
     <div class="card">
       <button class="btn" id="referralBtn">Referral Link</button>
     </div>
@@ -222,30 +198,37 @@ function showPage(page,btn){
   btn.classList.add('active');
 }
 
-/* ADSGRAM INIT (SAFE) */
+/* ADSGRAM INIT (UNCHANGED) */
 const RewardAd = window.Adsgram.init({ blockId: "26852" });
 
-/* USER DATA */
-let totalBalance = 0;
-let todayEarnings = 0;
+/* USER DATA (AUTO SAVE) */
+let totalBalance = Number(localStorage.getItem("balance")) || 0;
+let todayEarnings = Number(localStorage.getItem("today")) || 0;
 let miningRate = 0.00001;
-let energy = 20;
-let vipLevel = 0;
+let energy = Number(localStorage.getItem("energy")) || 20;
+let vipLevel = Number(localStorage.getItem("vip")) || 0;
 let lastAdTime = 0;
-const adCooldown = 15000; // 15 sec
+const adCooldown = 15000;
 
-/* UI ELEMENTS */
+function saveData(){
+  localStorage.setItem("balance", totalBalance);
+  localStorage.setItem("today", todayEarnings);
+  localStorage.setItem("energy", energy);
+  localStorage.setItem("vip", vipLevel);
+}
+
+/* UI */
 const totalBalanceEl = document.getElementById('totalBalance');
 const todayEarningsEl = document.getElementById('todayEarnings');
 const energyEl = document.getElementById('goldEnergy');
 
 function updateUI(){
-  totalBalanceEl.textContent = totalBalance;
-  todayEarningsEl.textContent = todayEarnings;
+  totalBalanceEl.textContent = Number(totalBalance).toFixed(5);
+  todayEarningsEl.textContent = Number(todayEarnings).toFixed(5);
   energyEl.textContent = energy;
 }
 
-/* MINING */
+/* MINING FIXED */
 let miningInterval;
 const miningBtn = document.getElementById('miningBtn');
 
@@ -263,13 +246,16 @@ miningBtn.onclick = () => {
 
     if(energy <= 0){
       clearInterval(miningInterval);
+      miningInterval = null;
       miningBtn.textContent = '⚡ No Energy';
       return;
     }
 
     energy--;
-    totalBalance = (parseFloat(totalBalance) + miningRate).toFixed(5);
-    todayEarnings = (parseFloat(todayEarnings) + miningRate).toFixed(5);
+    totalBalance += miningRate;
+    todayEarnings += miningRate;
+
+    saveData();
     updateUI();
 
   }, 5000);
@@ -277,7 +263,6 @@ miningBtn.onclick = () => {
 
 /* WATCH AD REWARD */
 function watchAdReward(){
-
   let now = Date.now();
 
   if(now - lastAdTime < adCooldown){
@@ -290,17 +275,19 @@ function watchAdReward(){
       lastAdTime = Date.now();
       let reward = 0.002 + (vipLevel * 0.001);
 
-      totalBalance = (parseFloat(totalBalance) + reward).toFixed(5);
-      todayEarnings = (parseFloat(todayEarnings) + reward).toFixed(5);
-
+      totalBalance += reward;
+      todayEarnings += reward;
       energy += 5;
+
+      saveData();
       updateUI();
+
       alert("✅ Earned $" + reward);
     }
   });
 }
 
-/* BOOST MINING */
+/* BOOST */
 function boostMining(){
   RewardAd.show().then(res=>{
     if(res.done){
@@ -310,17 +297,18 @@ function boostMining(){
   });
 }
 
-/* VIP UPGRADE */
+/* VIP */
 function upgradeVIP(){
   RewardAd.show().then(res=>{
     if(res.done){
       vipLevel++;
+      saveData();
       alert("💎 VIP Level " + vipLevel);
     }
   });
 }
 
-/* DAILY BONUS */
+/* DAILY */
 function dailyBonus(){
   let today = new Date().toDateString();
 
@@ -331,15 +319,18 @@ function dailyBonus(){
 
   RewardAd.show().then(res=>{
     if(res.done){
-      totalBalance = (parseFloat(totalBalance) + 0.005).toFixed(5);
+      totalBalance += 0.005;
       localStorage.setItem("daily", today);
+
+      saveData();
       updateUI();
+
       alert("🎁 Daily Bonus $0.005");
     }
   });
 }
 
-/* ADD HIGH REVENUE BUTTONS */
+/* BUTTONS */
 function addButtons(){
   const container = document.getElementById("homePage");
   container.innerHTML += `
@@ -355,7 +346,7 @@ function addButtons(){
 addButtons();
 updateUI();
 
-/* CLAIM GOLD TASK (UNCHANGED SAFE) */
+/* CLAIM TASK */
 const claimBtn = document.getElementById('claimGoldBtn');
 const taskSection = document.getElementById('claimTaskSection');
 
@@ -373,8 +364,10 @@ claimBtn.onclick = () => {
   taskEl.addEventListener('reward', () => {
     let reward = 0.002;
 
-    totalBalance = (parseFloat(totalBalance) + reward).toFixed(5);
-    todayEarnings = (parseFloat(todayEarnings) + reward).toFixed(5);
+    totalBalance += reward;
+    todayEarnings += reward;
+
+    saveData();
     updateUI();
 
     alert("✅ Task Reward");
@@ -383,7 +376,6 @@ claimBtn.onclick = () => {
       (currentClaimIndex + 1) % claimTasks.length;
 
     taskSection.innerHTML = '';
-
   }, { once:true });
 };
 </script>
