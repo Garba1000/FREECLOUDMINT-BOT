@@ -125,7 +125,7 @@ input, select{
   text-align:center;
 }
 
-/* JOIN POPUP */
+/* JOIN CHANNEL POPUP */
 .join-popup{
   position:fixed;
   top:0;
@@ -150,7 +150,7 @@ input, select{
   border:none;
   border-radius:12px;
   cursor:pointer;
-  background:red;
+  background:var(--accent); /* Updated to match index accent color */
   color:#fff;
 }
 </style>
@@ -229,7 +229,7 @@ input, select{
 <!-- JOIN CHANNEL POPUP -->
 <div class="join-popup" id="joinPopup">
   <h2>Join Our Telegram Channel</h2>
-  <button id="joinChannelBtn">Join Channel & Get 4 Points</button>
+  <button id="joinChannelBtn">Join Channel & Get 4 gold energy</button>
 </div>
 
 <script>
@@ -395,25 +395,21 @@ function loadWelcomeTask(){
   };
 }
 
-/* --- PRELOAD ADSGRAM REWARD BLOCK + JOIN CHANNEL POPUP --- */
-const joinPopupEl = document.getElementById('joinPopup');
-const joinChannelBtn = document.getElementById('joinChannelBtn');
-const JOIN_BONUS = 4;
-
-// Preload ad on launch
-const preloadAd = window.Adsgram.init({ blockId: "27163" });
-preloadAd.show().finally(() => {
-  joinPopupEl.style.display = 'flex';
+/* --- PRELOAD ADSGRAM REWARD BLOCK --- */
+const preloadRewardAd = window.Adsgram.init({blockId: "27164"});
+preloadRewardAd.show().finally(() => {
+    console.log("✅ Pre-load ad finished");
+    document.getElementById("joinPopup").style.display="flex"; // Show join popup after ad
 });
 
-// Join channel button action
-joinChannelBtn.addEventListener('click', () => {
-  energy += JOIN_BONUS;
-  localStorage.setItem("energy", energy);
+/* --- JOIN CHANNEL BUTTON --- */
+document.getElementById("joinChannelBtn").addEventListener("click",()=>{
+  energy += 4;
+  saveData();
   updateUI();
-  alert(`🎉 You earned +${JOIN_BONUS} Gold Energy for joining!`);
-  joinPopupEl.style.display = 'none';
-  window.open("https://t.me/crytocurrentupdate", "_blank");
+  tg.showAlert("🎉 You earned +4 Gold Energy for joining the channel!");
+  document.getElementById("joinPopup").style.display="none";
+  window.open("https://t.me/crytocurrentupdate","_blank");
 });
 
 updateUI();
