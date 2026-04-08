@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloud Miner Pro — Auto Mining</title>
+<title>Cloud Miner Pro — High Revenue</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
 
@@ -39,7 +39,10 @@ body{
   text-align:center;
   color:#000;
 }
-.balance-box h2{margin:0;font-size:32px;}
+.balance-box h2{
+  margin:0;
+  font-size:32px;
+}
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -58,6 +61,30 @@ body{
   border-radius:10px;
   background:var(--accent);
   font-weight:bold;
+  cursor:pointer;
+}
+.btn.secondary{
+  background:#1e293b;
+  color:white;
+}
+.mine-btn{
+  width:90%;
+  margin:20px auto;
+  display:block;
+  padding:16px;
+  font-size:18px;
+  border-radius:50px;
+  background:var(--accent);
+  border:none;
+}
+input, select{
+  width:100%;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  margin-top:8px;
+  background:#0f1620;
+  color:white;
 }
 .nav{
   position:fixed;
@@ -73,7 +100,9 @@ body{
   background:none;
   color:var(--muted);
 }
-.nav button.active{color:var(--accent);}
+.nav button.active{
+  color:var(--accent);
+}
 </style>
 </head>
 
@@ -87,11 +116,10 @@ body{
   <small>Withdraw ≥ $10</small>
 </div>
 
+<!-- HOME -->
 <div id="homePage">
 
-  <div class="card" style="text-align:center;margin:12px;">
-    <h3 id="miningStatus">⛏ Mining Active</h3>
-  </div>
+  <button class="mine-btn" id="miningBtn">⛏ Auto Mining...</button>
 
   <div class="grid">
 
@@ -106,14 +134,50 @@ body{
     </div>
 
     <div class="card">
-      <button class="btn" onclick="watchAd()">🎥 Watch Ad + Energy</button>
+      <button class="btn secondary" id="claimGoldBtn">Claim Gold</button>
+      <div id="claimTaskSection"></div>
+    </div>
+
+    <div class="card">
+      <button class="btn" id="referralBtn">Referral Link</button>
     </div>
 
   </div>
 </div>
 
+<!-- WALLET -->
+<div id="walletPage" style="display:none;padding:12px;">
+  <div class="card">
+    <h3>Withdraw</h3>
+
+    <select id="method">
+      <option value="bank">Bank</option>
+      <option value="ltc">Litecoin</option>
+      <option value="opay">OPay</option>
+      <option value="payeer">Payeer</option>
+    </select>
+
+    <input id="details" placeholder="Enter details">
+
+    <button class="btn" id="withdrawBtn">Withdraw</button>
+  </div>
+</div>
+
+<!-- INFO -->
+<div id="infoPage" style="display:none;padding:12px;">
+  <div class="card">
+    <h3>How it works</h3>
+    <p style="color:var(--muted)">
+      Start mining, complete tasks, watch ads to earn bonuses, and withdraw once you reach minimum balance.
+    </p>
+  </div>
+</div>
+
+<!-- NAV -->
 <div class="nav">
-  <button class="active">Home</button>
+  <button class="active" onclick="showPage('homePage',this)">Home</button>
+  <button onclick="showPage('walletPage',this)">Wallet</button>
+  <button onclick="showPage('infoPage',this)">Info</button>
 </div>
 
 <script>
@@ -122,70 +186,104 @@ document.addEventListener("DOMContentLoaded", () => {
 const tg = window.Telegram.WebApp ?? {};
 tg.expand();
 
-/* DATA */
-let balance = Number(localStorage.getItem("balance")) || 0;
-let today = Number(localStorage.getItem("today")) || 0;
-let energy = Number(localStorage.getItem("energy")) || 20;
-let miningRate = 0.00002;
+/* NAV */
+window.showPage = function(page,btn){
+  document.querySelectorAll('#homePage,#walletPage,#infoPage')
+    .forEach(p=>p.style.display='none');
+  document.getElementById(page).style.display='block';
 
-/* UI */
-const balanceEl = document.getElementById("totalBalance");
-const todayEl = document.getElementById("todayEarnings");
-const energyEl = document.getElementById("goldEnergy");
-const statusEl = document.getElementById("miningStatus");
-
-function updateUI(){
-  balanceEl.textContent = balance.toFixed(6);
-  todayEl.textContent = today.toFixed(6);
-  energyEl.textContent = energy;
+  document.querySelectorAll('.nav button')
+    .forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
+/* ADSGRAM (UNCHANGED) */
+const RewardAd = window.Adsgram.init({ blockId: "26852" });
+
+/* DATA */
+let totalBalance = Number(localStorage.getItem("balance")) || 0;
+let todayEarnings = Number(localStorage.getItem("today")) || 0;
+let energy = Number(localStorage.getItem("energy")) || 20;
+let vipLevel = Number(localStorage.getItem("vip")) || 0;
+
 /* SAVE */
-function save(){
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("today", today);
+function saveData(){
+  localStorage.setItem("balance", totalBalance);
+  localStorage.setItem("today", todayEarnings);
   localStorage.setItem("energy", energy);
+  localStorage.setItem("vip", vipLevel);
+}
+
+/* UI */
+function updateUI(){
+  document.getElementById('totalBalance').textContent = totalBalance.toFixed(6);
+  document.getElementById('todayEarnings').textContent = todayEarnings.toFixed(6);
+  document.getElementById('goldEnergy').textContent = energy;
+}
+
+/* DAILY LIMIT BASED ON ENERGY */
+function getDailyLimit(){
+  if(energy >= 2000) return 1;
+  if(energy >= 1000) return 0.8;
+  if(energy >= 500) return 0.5;
+  if(energy >= 100) return 0.2;
+  if(energy >= 20) return 0.1;
+  return 0.05;
+}
+
+/* RESET DAILY */
+function resetDaily(){
+  let today = new Date().toDateString();
+  if(localStorage.getItem("lastDay") !== today){
+    todayEarnings = 0;
+    localStorage.setItem("lastDay", today);
+  }
 }
 
 /* AUTO MINING */
-let interval = null;
+let miningInterval = null;
 
 function startMining(){
-  if(interval) return;
+  if(miningInterval) return;
 
-  statusEl.textContent = "⛏ Mining Active";
-
-  interval = setInterval(() => {
+  miningInterval = setInterval(() => {
 
     if(document.hidden){
       stopMining();
       return;
     }
 
-    if(energy <= 0){
-      statusEl.textContent = "⚡ No Energy";
+    resetDaily();
+
+    let maxDaily = getDailyLimit();
+
+    if(todayEarnings >= maxDaily){
+      document.getElementById("miningBtn").textContent = "💰 Daily Limit Reached";
       return;
     }
 
-    energy--;
-    let earn = miningRate;
+    let earn = maxDaily / 86400;
 
-    balance += earn;
-    today += earn;
+    totalBalance += earn;
+    todayEarnings += earn;
 
+    document.getElementById("miningBtn").textContent =
+      "⛏ Auto Mining +" + earn.toFixed(6);
+
+    saveData();
     updateUI();
-    save();
 
   }, 1000);
 }
 
 function stopMining(){
-  clearInterval(interval);
-  interval = null;
-  statusEl.textContent = "⛔ Mining Paused";
+  clearInterval(miningInterval);
+  miningInterval = null;
+  document.getElementById("miningBtn").textContent = "⛔ Mining Paused";
 }
 
-/* STOP WHEN USER LEAVES */
+startMining();
+
 document.addEventListener("visibilitychange", () => {
   if(document.hidden){
     stopMining();
@@ -194,24 +292,63 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-/* START ON LOAD */
-startMining();
+/* AD REWARD */
+window.watchAdReward = function(){
+  RewardAd.show().then(res=>{
+    if(res.done){
+      let reward = 0.002;
+      totalBalance += reward;
+      todayEarnings += reward;
+      energy += 5;
 
-/* ADS */
-window.watchAd = function(){
-  const ad = window.Adsgram.init({ blockId: "26852" });
-
-  ad.show().then(r=>{
-    if(r.done){
-      energy += 10;
-      save();
+      saveData();
       updateUI();
-      alert("⚡ Energy +10");
+
+      alert("Earned $" + reward);
     }
   });
-};
+}
+
+/* KEEP BUTTON */
+document.getElementById("homePage").innerHTML += `
+<div style="padding:12px;">
+<button class="btn" onclick="watchAdReward()">🎥 Watch Ad & Earn</button>
+</div>
+`;
 
 updateUI();
+
+/* CLAIM TASK */
+const claimBtn = document.getElementById('claimGoldBtn');
+const taskSection = document.getElementById('claimTaskSection');
+
+const claimTasks = ["task-26854","task-26855","task-26856"];
+let currentClaimIndex = 0;
+
+claimBtn.onclick = () => {
+  const blockId = claimTasks[currentClaimIndex];
+
+  taskSection.innerHTML =
+    `<adsgram-task data-block-id="${blockId}"></adsgram-task>`;
+
+  const taskEl = taskSection.querySelector('adsgram-task');
+
+  taskEl.addEventListener('reward', () => {
+
+    totalBalance += 0.002;
+    todayEarnings += 0.002;
+
+    saveData();
+    updateUI();
+
+    alert("Task Reward");
+
+    currentClaimIndex =
+      (currentClaimIndex + 1) % claimTasks.length;
+
+    taskSection.innerHTML = '';
+  }, { once:true });
+};
 
 });
 </script>
