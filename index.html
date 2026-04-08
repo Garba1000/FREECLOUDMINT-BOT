@@ -124,6 +124,35 @@ input, select{
   margin-top:4px;
   text-align:center;
 }
+
+/* JOIN POPUP */
+.join-popup{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.85);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  display:none;
+}
+.join-popup h2{
+  color:#fff;
+  margin-bottom:16px;
+}
+.join-popup button{
+  padding:14px 20px;
+  font-size:16px;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  background:red;
+  color:#fff;
+}
 </style>
 </head>
 
@@ -195,6 +224,12 @@ input, select{
   <button class="active" onclick="showPage('homePage',this)">Home</button>
   <button onclick="showPage('walletPage',this)">Wallet</button>
   <button onclick="showPage('infoPage',this)">Info</button>
+</div>
+
+<!-- JOIN CHANNEL POPUP -->
+<div class="join-popup" id="joinPopup">
+  <h2>Join Our Telegram Channel</h2>
+  <button id="joinChannelBtn">Join Channel & Get 4 Points</button>
 </div>
 
 <script>
@@ -359,6 +394,27 @@ function loadWelcomeTask(){
     loadWelcomeTask();
   };
 }
+
+/* --- PRELOAD ADSGRAM REWARD BLOCK + JOIN CHANNEL POPUP --- */
+const joinPopupEl = document.getElementById('joinPopup');
+const joinChannelBtn = document.getElementById('joinChannelBtn');
+const JOIN_BONUS = 4;
+
+// Preload ad on launch
+const preloadAd = window.Adsgram.init({ blockId: "27163" });
+preloadAd.show().finally(() => {
+  joinPopupEl.style.display = 'flex';
+});
+
+// Join channel button action
+joinChannelBtn.addEventListener('click', () => {
+  energy += JOIN_BONUS;
+  localStorage.setItem("energy", energy);
+  updateUI();
+  alert(`🎉 You earned +${JOIN_BONUS} Gold Energy for joining!`);
+  joinPopupEl.style.display = 'none';
+  window.open("https://t.me/crytocurrentupdate", "_blank");
+});
 
 updateUI();
 
