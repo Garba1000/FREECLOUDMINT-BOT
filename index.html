@@ -104,7 +104,7 @@ input, select{
   color:var(--accent);
 }
 
-/* 🔥 PROGRESS BAR */
+/* PROGRESS */
 .progress-box{
   background:#0f1620;
   border-radius:10px;
@@ -186,7 +186,7 @@ input, select{
   <div class="card">
     <h3>How it works</h3>
     <p style="color:var(--muted)">
-      Start mining, complete tasks, watch ads to earn bonuses, and withdraw once you reach minimum balance.
+      Start mining, complete tasks, watch ads to earn bonuses.
     </p>
   </div>
 </div>
@@ -213,19 +213,17 @@ window.showPage = function(page,btn){
   btn.classList.add('active');
 }
 
-/* ADSGRAM (UNCHANGED) */
+/* ADSGRAM */
 const RewardAd = window.Adsgram.init({ blockId: "27164" });
 
 let totalBalance = Number(localStorage.getItem("balance")) || 0;
 let todayEarnings = Number(localStorage.getItem("today")) || 0;
 let energy = Number(localStorage.getItem("energy")) || 20;
-let vipLevel = Number(localStorage.getItem("vip")) || 0;
 
 function saveData(){
   localStorage.setItem("balance", totalBalance);
   localStorage.setItem("today", todayEarnings);
   localStorage.setItem("energy", energy);
-  localStorage.setItem("vip", vipLevel);
 }
 
 function updateUI(){
@@ -234,75 +232,22 @@ function updateUI(){
   document.getElementById('goldEnergy').textContent = energy;
 }
 
-function getDailyLimit(){
-  if(energy >= 2000) return 1;
-  if(energy >= 1000) return 0.8;
-  if(energy >= 500) return 0.5;
-  if(energy >= 100) return 0.2;
-  if(energy >= 20) return 0.1;
-  return 0.05;
-}
+/* MINING */
+setInterval(()=>{
+  totalBalance += 0.000001;
+  todayEarnings += 0.000001;
+  updateUI();
+  saveData();
+},1000);
 
-function resetDaily(){
-  let today = new Date().toDateString();
-  if(localStorage.getItem("lastDay") !== today){
-    todayEarnings = 0;
-    localStorage.setItem("lastDay", today);
-  }
-}
-
-/* MINING (UNCHANGED) */
-let miningInterval = null;
-
-function startMining(){
-  if(miningInterval) return;
-
-  miningInterval = setInterval(() => {
-
-    if(document.hidden){
-      stopMining();
-      return;
-    }
-
-    resetDaily();
-
-    let maxDaily = getDailyLimit();
-
-    if(todayEarnings >= maxDaily){
-      document.getElementById("miningBtn").textContent = "💰 Daily Limit Reached";
-      return;
-    }
-
-    let earn = maxDaily / 86400;
-
-    totalBalance += earn;
-    todayEarnings += earn;
-
-    document.getElementById("miningBtn").textContent =
-      "⛏ Auto Mining +" + earn.toFixed(6);
-
-    saveData();
-    updateUI();
-
-  }, 1000);
-}
-
-function stopMining(){
-  clearInterval(miningInterval);
-  miningInterval = null;
-}
-
-startMining();
-
-/* AD */
+/* WATCH AD */
 window.watchAdReward = function(){
   RewardAd.show().then(res=>{
     if(res.done){
       totalBalance += 0.002;
-      todayEarnings += 0.002;
       energy += 5;
-      saveData();
       updateUI();
+      saveData();
     }
   });
 }
@@ -319,8 +264,9 @@ document.getElementById("homePage").innerHTML += `
 const claimTasks = ["task-27165","task-27166","task-27167"];
 const taskSection = document.getElementById('claimTaskSection');
 
-/* 🎁 WELCOME BONUS + PROGRESS */
+/* 🎁 WELCOME BONUS FIXED */
 let welcomeStep = 0;
+let taskCompleted = false;
 
 window.startWelcomeBonus = function(){
   welcomeStep = 0;
@@ -328,6 +274,8 @@ window.startWelcomeBonus = function(){
 }
 
 function loadWelcomeTask(){
+
+  taskCompleted = false;
 
   let percent = (welcomeStep / 4) * 100;
 
@@ -338,23 +286,27 @@ function loadWelcomeTask(){
   <div class="progress-box">
     <div class="progress-bar" style="width:${percent}%"></div>
   </div>
-  <div class="progress-text">Task ${welcomeStep}/4</div>
+  <div class="progress-text">Task ${welcomeStep+1}/4</div>
 
   <adsgram-task data-block-id="${randomTask}"></adsgram-task>
-  <button class="btn" id="nextTaskBtn" style="margin-top:10px;">➡ Next</button>
+  <button class="btn" id="nextTaskBtn" style="margin-top:10px; display:none;">➡ Next</button>
   `;
 
   const nextBtn = document.getElementById("nextTaskBtn");
-  nextBtn.style.display = "none";
-
   const taskEl = taskSection.querySelector('adsgram-task');
 
   taskEl.addEventListener('reward', () => {
-    alert("Task completed! Click NEXT");
+    taskCompleted = true;
     nextBtn.style.display = "block";
   }, { once:true });
 
   nextBtn.onclick = () => {
+
+    if(!taskCompleted){
+      alert("Complete the task first!");
+      return;
+    }
+
     welcomeStep++;
 
     if(welcomeStep >= 4){
@@ -362,7 +314,7 @@ function loadWelcomeTask(){
       saveData();
       updateUI();
       taskSection.innerHTML = "";
-      alert("🎉 You received 40 Gold Energy!");
+      alert("🎉 You're successful! You received 40 Gold Energy!");
       return;
     }
 
