@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloud Miner Pro — High Revenue</title>
+<title>Cloud Miner Pro — Auto Mining</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
 
@@ -39,10 +39,7 @@ body{
   text-align:center;
   color:#000;
 }
-.balance-box h2{
-  margin:0;
-  font-size:32px;
-}
+.balance-box h2{margin:0;font-size:32px;}
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -61,30 +58,6 @@ body{
   border-radius:10px;
   background:var(--accent);
   font-weight:bold;
-  cursor:pointer;
-}
-.btn.secondary{
-  background:#1e293b;
-  color:white;
-}
-.mine-btn{
-  width:90%;
-  margin:20px auto;
-  display:block;
-  padding:16px;
-  font-size:18px;
-  border-radius:50px;
-  background:var(--accent);
-  border:none;
-}
-input, select{
-  width:100%;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  margin-top:8px;
-  background:#0f1620;
-  color:white;
 }
 .nav{
   position:fixed;
@@ -100,9 +73,7 @@ input, select{
   background:none;
   color:var(--muted);
 }
-.nav button.active{
-  color:var(--accent);
-}
+.nav button.active{color:var(--accent);}
 </style>
 </head>
 
@@ -116,10 +87,11 @@ input, select{
   <small>Withdraw ≥ $10</small>
 </div>
 
-<!-- HOME -->
 <div id="homePage">
 
-  <button class="mine-btn" id="miningBtn">⛏ Start Mining</button>
+  <div class="card" style="text-align:center;margin:12px;">
+    <h3 id="miningStatus">⛏ Mining Active</h3>
+  </div>
 
   <div class="grid">
 
@@ -134,178 +106,112 @@ input, select{
     </div>
 
     <div class="card">
-      <button class="btn secondary" id="claimGoldBtn">Claim Gold</button>
-      <div id="claimTaskSection"></div>
+      <button class="btn" onclick="watchAd()">🎥 Watch Ad + Energy</button>
     </div>
 
-    <div class="card">
-      <button class="btn" id="referralBtn">Referral Link</button>
-    </div>
-
-  </div>
-</div>
-
-<!-- WALLET -->
-<div id="walletPage" style="display:none;padding:12px;">
-  <div class="card">
-    <h3>Withdraw</h3>
-    <select>
-      <option>Bank</option>
-      <option>Litecoin</option>
-      <option>OPay</option>
-      <option>Payeer</option>
-    </select>
-    <input placeholder="Enter details">
-    <button class="btn">Withdraw</button>
-  </div>
-</div>
-
-<!-- INFO -->
-<div id="infoPage" style="display:none;padding:12px;">
-  <div class="card">
-    <h3>How it works</h3>
-    <p style="color:var(--muted)">
-      Start mining, complete tasks, watch ads to earn bonuses.
-    </p>
   </div>
 </div>
 
 <div class="nav">
-  <button class="active" onclick="showPage('homePage',this)">Home</button>
-  <button onclick="showPage('walletPage',this)">Wallet</button>
-  <button onclick="showPage('infoPage',this)">Info</button>
+  <button class="active">Home</button>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-/* TELEGRAM */
 const tg = window.Telegram.WebApp ?? {};
 tg.expand();
 
-/* NAV */
-window.showPage = function(page,btn){
-  document.querySelectorAll('#homePage,#walletPage,#infoPage')
-    .forEach(p=>p.style.display='none');
-  document.getElementById(page).style.display='block';
-
-  document.querySelectorAll('.nav button')
-    .forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-}
-
-/* ADS */
-const RewardAd = window.Adsgram.init({ blockId: "26852" });
-
 /* DATA */
-let totalBalance = Number(localStorage.getItem("balance")) || 0;
-let todayEarnings = Number(localStorage.getItem("today")) || 0;
+let balance = Number(localStorage.getItem("balance")) || 0;
+let today = Number(localStorage.getItem("today")) || 0;
 let energy = Number(localStorage.getItem("energy")) || 20;
-let vipLevel = Number(localStorage.getItem("vip")) || 0;
-let miningRate = 0.00001;
-
-function save(){
-  localStorage.setItem("balance", totalBalance);
-  localStorage.setItem("today", todayEarnings);
-  localStorage.setItem("energy", energy);
-  localStorage.setItem("vip", vipLevel);
-}
+let miningRate = 0.00002;
 
 /* UI */
+const balanceEl = document.getElementById("totalBalance");
+const todayEl = document.getElementById("todayEarnings");
+const energyEl = document.getElementById("goldEnergy");
+const statusEl = document.getElementById("miningStatus");
+
 function updateUI(){
-  document.getElementById("totalBalance").textContent = totalBalance.toFixed(6);
-  document.getElementById("todayEarnings").textContent = todayEarnings.toFixed(6);
-  document.getElementById("goldEnergy").textContent = energy;
+  balanceEl.textContent = balance.toFixed(6);
+  todayEl.textContent = today.toFixed(6);
+  energyEl.textContent = energy;
 }
 
-/* ===== PERFECT MINING ===== */
-let mining = false;
+/* SAVE */
+function save(){
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("today", today);
+  localStorage.setItem("energy", energy);
+}
+
+/* AUTO MINING */
 let interval = null;
 
-const btn = document.getElementById("miningBtn");
+function startMining(){
+  if(interval) return;
 
-btn.onclick = () => {
-
-  if(mining){
-    clearInterval(interval);
-    mining = false;
-    btn.textContent = "⛏ Start Mining";
-    return;
-  }
-
-  if(energy <= 0){
-    alert("⚡ No energy");
-    return;
-  }
-
-  mining = true;
-  btn.textContent = "⛏ Mining...";
+  statusEl.textContent = "⛏ Mining Active";
 
   interval = setInterval(() => {
 
-    if(energy <= 0){
-      clearInterval(interval);
-      mining = false;
-      btn.textContent = "⚡ No Energy";
-      updateUI();
+    if(document.hidden){
+      stopMining();
       return;
     }
 
-    let earn = miningRate * (10 + vipLevel * 5);
+    if(energy <= 0){
+      statusEl.textContent = "⚡ No Energy";
+      return;
+    }
 
     energy--;
-    totalBalance += earn;
-    todayEarnings += earn;
+    let earn = miningRate;
 
-    btn.textContent = "⛏ +" + earn.toFixed(6);
+    balance += earn;
+    today += earn;
 
-    save();
     updateUI();
+    save();
 
   }, 1000);
-};
+}
 
-/* WATCH AD */
-window.watchAdReward = function(){
-  RewardAd.show().then(r=>{
+function stopMining(){
+  clearInterval(interval);
+  interval = null;
+  statusEl.textContent = "⛔ Mining Paused";
+}
+
+/* STOP WHEN USER LEAVES */
+document.addEventListener("visibilitychange", () => {
+  if(document.hidden){
+    stopMining();
+  }else{
+    startMining();
+  }
+});
+
+/* START ON LOAD */
+startMining();
+
+/* ADS */
+window.watchAd = function(){
+  const ad = window.Adsgram.init({ blockId: "26852" });
+
+  ad.show().then(r=>{
     if(r.done){
-      totalBalance += 0.002;
-      todayEarnings += 0.002;
-      energy += 5;
+      energy += 10;
       save();
       updateUI();
-      alert("Earned $0.002");
+      alert("⚡ Energy +10");
     }
   });
 };
 
-/* ADD BUTTON */
-document.getElementById("homePage").innerHTML += `
-<div style="padding:12px;">
-<button class="btn" onclick="watchAdReward()">🎥 Watch Ad & Earn</button>
-</div>
-`;
-
 updateUI();
-
-/* TASK */
-const claimBtn = document.getElementById("claimGoldBtn");
-const taskSection = document.getElementById("claimTaskSection");
-
-claimBtn.onclick = () => {
-  taskSection.innerHTML = `<adsgram-task data-block-id="task-26854"></adsgram-task>`;
-
-  const task = taskSection.querySelector("adsgram-task");
-
-  task.addEventListener("reward", () => {
-    totalBalance += 0.002;
-    todayEarnings += 0.002;
-    save();
-    updateUI();
-    alert("Task reward");
-    taskSection.innerHTML = "";
-  }, {once:true});
-};
 
 });
 </script>
