@@ -149,17 +149,14 @@ input, select{
 <div id="walletPage" style="display:none;padding:12px;">
   <div class="card">
     <h3>Withdraw</h3>
-
-    <select id="method">
-      <option value="bank">Bank</option>
-      <option value="ltc">Litecoin</option>
-      <option value="opay">OPay</option>
-      <option value="payeer">Payeer</option>
+    <select>
+      <option>Bank</option>
+      <option>Litecoin</option>
+      <option>OPay</option>
+      <option>Payeer</option>
     </select>
-
-    <input id="details" placeholder="Enter details">
-
-    <button class="btn" id="withdrawBtn">Withdraw</button>
+    <input placeholder="Enter details">
+    <button class="btn">Withdraw</button>
   </div>
 </div>
 
@@ -168,12 +165,11 @@ input, select{
   <div class="card">
     <h3>How it works</h3>
     <p style="color:var(--muted)">
-      Start mining, complete tasks, watch ads to earn bonuses, and withdraw once you reach minimum balance.
+      Start mining, complete tasks, watch ads to earn bonuses.
     </p>
   </div>
 </div>
 
-<!-- NAV -->
 <div class="nav">
   <button class="active" onclick="showPage('homePage',this)">Home</button>
   <button onclick="showPage('walletPage',this)">Wallet</button>
@@ -181,11 +177,14 @@ input, select{
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
+
+/* TELEGRAM */
 const tg = window.Telegram.WebApp ?? {};
 tg.expand();
 
 /* NAV */
-function showPage(page,btn){
+window.showPage = function(page,btn){
   document.querySelectorAll('#homePage,#walletPage,#infoPage')
     .forEach(p=>p.style.display='none');
   document.getElementById(page).style.display='block';
@@ -195,18 +194,17 @@ function showPage(page,btn){
   btn.classList.add('active');
 }
 
-/* ADSGRAM */
+/* ADS */
 const RewardAd = window.Adsgram.init({ blockId: "26852" });
 
 /* DATA */
 let totalBalance = Number(localStorage.getItem("balance")) || 0;
 let todayEarnings = Number(localStorage.getItem("today")) || 0;
-let miningRate = 0.00001;
 let energy = Number(localStorage.getItem("energy")) || 20;
 let vipLevel = Number(localStorage.getItem("vip")) || 0;
-let lastAdTime = 0;
+let miningRate = 0.00001;
 
-function saveData(){
+function save(){
   localStorage.setItem("balance", totalBalance);
   localStorage.setItem("today", todayEarnings);
   localStorage.setItem("energy", energy);
@@ -215,23 +213,23 @@ function saveData(){
 
 /* UI */
 function updateUI(){
-  document.getElementById('totalBalance').textContent = totalBalance.toFixed(6);
-  document.getElementById('todayEarnings').textContent = todayEarnings.toFixed(6);
-  document.getElementById('goldEnergy').textContent = energy;
+  document.getElementById("totalBalance").textContent = totalBalance.toFixed(6);
+  document.getElementById("todayEarnings").textContent = todayEarnings.toFixed(6);
+  document.getElementById("goldEnergy").textContent = energy;
 }
 
-/* ===== FIXED MINING ===== */
-let miningInterval = null;
-let isMining = false;
+/* ===== PERFECT MINING ===== */
+let mining = false;
+let interval = null;
 
-const miningBtn = document.getElementById('miningBtn');
+const btn = document.getElementById("miningBtn");
 
-miningBtn.onclick = () => {
+btn.onclick = () => {
 
-  if(isMining){
-    clearInterval(miningInterval);
-    isMining = false;
-    miningBtn.textContent = '⛏ Start Mining';
+  if(mining){
+    clearInterval(interval);
+    mining = false;
+    btn.textContent = "⛏ Start Mining";
     return;
   }
 
@@ -240,51 +238,48 @@ miningBtn.onclick = () => {
     return;
   }
 
-  isMining = true;
-  miningBtn.textContent = '⛏ Mining...';
+  mining = true;
+  btn.textContent = "⛏ Mining...";
 
-  miningInterval = setInterval(() => {
+  interval = setInterval(() => {
 
     if(energy <= 0){
-      clearInterval(miningInterval);
-      isMining = false;
-      miningBtn.textContent = '⚡ No Energy';
+      clearInterval(interval);
+      mining = false;
+      btn.textContent = "⚡ No Energy";
+      updateUI();
       return;
     }
 
-    energy--;
-
     let earn = miningRate * (10 + vipLevel * 5);
 
+    energy--;
     totalBalance += earn;
     todayEarnings += earn;
 
-    miningBtn.textContent = `⛏ +$${earn.toFixed(6)}`;
+    btn.textContent = "⛏ +" + earn.toFixed(6);
 
-    saveData();
+    save();
     updateUI();
 
-  }, 2000);
+  }, 1000);
 };
 
-/* AD REWARD */
-function watchAdReward(){
-  RewardAd.show().then(res=>{
-    if(res.done){
-      let reward = 0.002;
-      totalBalance += reward;
-      todayEarnings += reward;
+/* WATCH AD */
+window.watchAdReward = function(){
+  RewardAd.show().then(r=>{
+    if(r.done){
+      totalBalance += 0.002;
+      todayEarnings += 0.002;
       energy += 5;
-
-      saveData();
+      save();
       updateUI();
-
-      alert("Earned $" + reward);
+      alert("Earned $0.002");
     }
   });
-}
+};
 
-/* EXTRA BUTTONS */
+/* ADD BUTTON */
 document.getElementById("homePage").innerHTML += `
 <div style="padding:12px;">
 <button class="btn" onclick="watchAdReward()">🎥 Watch Ad & Earn</button>
@@ -293,37 +288,26 @@ document.getElementById("homePage").innerHTML += `
 
 updateUI();
 
-/* CLAIM TASK */
-const claimBtn = document.getElementById('claimGoldBtn');
-const taskSection = document.getElementById('claimTaskSection');
-
-const claimTasks = ["task-26854","task-26855","task-26856"];
-let currentClaimIndex = 0;
+/* TASK */
+const claimBtn = document.getElementById("claimGoldBtn");
+const taskSection = document.getElementById("claimTaskSection");
 
 claimBtn.onclick = () => {
-  const blockId = claimTasks[currentClaimIndex];
+  taskSection.innerHTML = `<adsgram-task data-block-id="task-26854"></adsgram-task>`;
 
-  taskSection.innerHTML =
-    `<adsgram-task data-block-id="${blockId}"></adsgram-task>`;
+  const task = taskSection.querySelector("adsgram-task");
 
-  const taskEl = taskSection.querySelector('adsgram-task');
-
-  taskEl.addEventListener('reward', () => {
-
+  task.addEventListener("reward", () => {
     totalBalance += 0.002;
     todayEarnings += 0.002;
-
-    saveData();
+    save();
     updateUI();
-
-    alert("Task Reward");
-
-    currentClaimIndex =
-      (currentClaimIndex + 1) % claimTasks.length;
-
-    taskSection.innerHTML = '';
-  }, { once:true });
+    alert("Task reward");
+    taskSection.innerHTML = "";
+  }, {once:true});
 };
+
+});
 </script>
 
 </body>
