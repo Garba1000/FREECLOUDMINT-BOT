@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -261,10 +261,48 @@ document.getElementById("homePage").innerHTML += `
 `;
 
 /* CLAIM TASK */
-const claimTasks = ["task-27165","task-27166","task-27167"];
+const claimTasks = ["task-27165","task-27166","task-27167","task-27168"];
 const taskSection = document.getElementById('claimTaskSection');
 
-/* 🎁 WELCOME BONUS FIXED */
+/* CLAIM GOLD RANDOM TASK */
+document.getElementById("claimGoldBtn").onclick = function(){
+
+  const randomTask =
+    claimTasks[Math.floor(Math.random()*claimTasks.length)];
+
+  taskSection.innerHTML = `
+    <adsgram-task data-block-id="${randomTask}"></adsgram-task>
+    <button class="btn" id="claimDoneBtn" style="margin-top:10px;display:none;">
+      ✔ Claim Reward
+    </button>
+  `;
+
+  const taskEl = taskSection.querySelector('adsgram-task');
+  const doneBtn = document.getElementById("claimDoneBtn");
+
+  let completed = false;
+
+  taskEl.addEventListener('reward', () => {
+    completed = true;
+    doneBtn.style.display = "block";
+  }, { once:true });
+
+  doneBtn.onclick = function(){
+    if(!completed){
+      alert("Complete the task first!");
+      return;
+    }
+
+    energy += 5;
+    saveData();
+    updateUI();
+
+    taskSection.innerHTML = "";
+    alert("🎉 You earned 5 Gold Energy!");
+  };
+};
+
+/* 🎁 WELCOME BONUS */
 let welcomeStep = 0;
 let taskCompleted = false;
 
