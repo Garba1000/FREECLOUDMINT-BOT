@@ -103,6 +103,27 @@ input, select{
 .nav button.active{
   color:var(--accent);
 }
+
+/* 🔥 PROGRESS BAR */
+.progress-box{
+  background:#0f1620;
+  border-radius:10px;
+  padding:6px;
+  margin-top:10px;
+}
+.progress-bar{
+  height:10px;
+  background:var(--accent);
+  width:0%;
+  border-radius:10px;
+  transition:0.3s;
+}
+.progress-text{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:4px;
+  text-align:center;
+}
 </style>
 </head>
 
@@ -116,7 +137,6 @@ input, select{
   <small>Withdraw ≥ $10</small>
 </div>
 
-<!-- HOME -->
 <div id="homePage">
 
   <button class="mine-btn" id="miningBtn">⛏ Auto Mining...</button>
@@ -145,7 +165,6 @@ input, select{
   </div>
 </div>
 
-<!-- WALLET -->
 <div id="walletPage" style="display:none;padding:12px;">
   <div class="card">
     <h3>Withdraw</h3>
@@ -163,7 +182,6 @@ input, select{
   </div>
 </div>
 
-<!-- INFO -->
 <div id="infoPage" style="display:none;padding:12px;">
   <div class="card">
     <h3>How it works</h3>
@@ -173,7 +191,6 @@ input, select{
   </div>
 </div>
 
-<!-- NAV -->
 <div class="nav">
   <button class="active" onclick="showPage('homePage',this)">Home</button>
   <button onclick="showPage('walletPage',this)">Wallet</button>
@@ -186,7 +203,6 @@ document.addEventListener("DOMContentLoaded", () => {
 const tg = window.Telegram.WebApp ?? {};
 tg.expand();
 
-/* NAV */
 window.showPage = function(page,btn){
   document.querySelectorAll('#homePage,#walletPage,#infoPage')
     .forEach(p=>p.style.display='none');
@@ -200,13 +216,11 @@ window.showPage = function(page,btn){
 /* ADSGRAM (UNCHANGED) */
 const RewardAd = window.Adsgram.init({ blockId: "27164" });
 
-/* DATA */
 let totalBalance = Number(localStorage.getItem("balance")) || 0;
 let todayEarnings = Number(localStorage.getItem("today")) || 0;
 let energy = Number(localStorage.getItem("energy")) || 20;
 let vipLevel = Number(localStorage.getItem("vip")) || 0;
 
-/* SAVE */
 function saveData(){
   localStorage.setItem("balance", totalBalance);
   localStorage.setItem("today", todayEarnings);
@@ -214,14 +228,12 @@ function saveData(){
   localStorage.setItem("vip", vipLevel);
 }
 
-/* UI */
 function updateUI(){
   document.getElementById('totalBalance').textContent = totalBalance.toFixed(6);
   document.getElementById('todayEarnings').textContent = todayEarnings.toFixed(6);
   document.getElementById('goldEnergy').textContent = energy;
 }
 
-/* DAILY LIMIT BASED ON ENERGY */
 function getDailyLimit(){
   if(energy >= 2000) return 1;
   if(energy >= 1000) return 0.8;
@@ -231,7 +243,6 @@ function getDailyLimit(){
   return 0.05;
 }
 
-/* RESET DAILY */
 function resetDaily(){
   let today = new Date().toDateString();
   if(localStorage.getItem("lastDay") !== today){
@@ -240,7 +251,7 @@ function resetDaily(){
   }
 }
 
-/* AUTO MINING */
+/* MINING (UNCHANGED) */
 let miningInterval = null;
 
 function startMining(){
@@ -279,76 +290,87 @@ function startMining(){
 function stopMining(){
   clearInterval(miningInterval);
   miningInterval = null;
-  document.getElementById("miningBtn").textContent = "⛔ Mining Paused";
 }
 
 startMining();
 
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden){
-    stopMining();
-  }else{
-    startMining();
-  }
-});
-
-/* AD REWARD */
+/* AD */
 window.watchAdReward = function(){
   RewardAd.show().then(res=>{
     if(res.done){
-      let reward = 0.002;
-      totalBalance += reward;
-      todayEarnings += reward;
+      totalBalance += 0.002;
+      todayEarnings += 0.002;
       energy += 5;
-
       saveData();
       updateUI();
-
-      alert("Earned $" + reward);
     }
   });
 }
 
-/* KEEP BUTTON */
+/* BUTTONS */
 document.getElementById("homePage").innerHTML += `
 <div style="padding:12px;">
 <button class="btn" onclick="watchAdReward()">🎥 Watch Ad & Earn</button>
+<button class="btn" onclick="startWelcomeBonus()">🎁 Welcome Bonus</button>
 </div>
 `;
 
-updateUI();
-
 /* CLAIM TASK */
-const claimBtn = document.getElementById('claimGoldBtn');
+const claimTasks = ["task-27165","task-27166","task-27167"];
 const taskSection = document.getElementById('claimTaskSection');
 
-const claimTasks = ["task-27165","task-27166","task-27167"];
-let currentClaimIndex = 0;
+/* 🎁 WELCOME BONUS + PROGRESS */
+let welcomeStep = 0;
 
-claimBtn.onclick = () => {
-  const blockId = claimTasks[currentClaimIndex];
+window.startWelcomeBonus = function(){
+  welcomeStep = 0;
+  loadWelcomeTask();
+}
 
-  taskSection.innerHTML =
-    `<adsgram-task data-block-id="${blockId}"></adsgram-task>`;
+function loadWelcomeTask(){
+
+  let percent = (welcomeStep / 4) * 100;
+
+  const randomTask =
+    claimTasks[Math.floor(Math.random()*claimTasks.length)];
+
+  taskSection.innerHTML = `
+  <div class="progress-box">
+    <div class="progress-bar" style="width:${percent}%"></div>
+  </div>
+  <div class="progress-text">Task ${welcomeStep}/4</div>
+
+  <adsgram-task data-block-id="${randomTask}"></adsgram-task>
+  <button class="btn" id="nextTaskBtn" style="margin-top:10px;">➡ Next</button>
+  `;
+
+  const nextBtn = document.getElementById("nextTaskBtn");
+  nextBtn.style.display = "none";
 
   const taskEl = taskSection.querySelector('adsgram-task');
 
   taskEl.addEventListener('reward', () => {
-
-    totalBalance += 0.002;
-    todayEarnings += 0.002;
-
-    saveData();
-    updateUI();
-
-    alert("Task Reward");
-
-    currentClaimIndex =
-      (currentClaimIndex + 1) % claimTasks.length;
-
-    taskSection.innerHTML = '';
+    alert("Task completed! Click NEXT");
+    nextBtn.style.display = "block";
   }, { once:true });
-};
+
+  nextBtn.onclick = () => {
+    welcomeStep++;
+
+    if(welcomeStep >= 4){
+      energy += 40;
+      saveData();
+      updateUI();
+      taskSection.innerHTML = "";
+      alert("🎉 You received 40 Gold Energy!");
+      return;
+    }
+
+    loadWelcomeTask();
+  };
+}
+
+updateUI();
 
 });
 </script>
